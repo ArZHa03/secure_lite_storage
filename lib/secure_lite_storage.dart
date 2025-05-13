@@ -1,23 +1,17 @@
-import 'dart:async';
-import 'dart:convert';
+import 'dart:async' show scheduleMicrotask;
+import 'dart:convert' show json;
 import 'dart:developer' show log;
-// ignore: avoid_web_libraries_in_flutter, deprecated_member_use
-import 'dart:html' as html;
-import 'dart:io';
 
-import 'package:cryptography/cryptography.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:cryptography/cryptography.dart' show AesCtr, Hmac, Mac, Pbkdf2, SecretBox, SecretKey;
+import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 
-part 'html_storage.dart';
-part 'i_storage.dart';
-part 'io_storage.dart';
+import 'html_storage.dart' if (dart.library.io) 'io_storage.dart';
+
 part 'micro_task.dart';
 
 class SecureLiteStorage {
   static final Map<String, SecureLiteStorage> _sync = {};
-  static late _IStorage _storage;
+  static late Storage _storage;
 
   late Future<SecureLiteStorage> _initStorage;
   Map<String, dynamic>? _initialData;
@@ -30,7 +24,12 @@ class SecureLiteStorage {
   AesCtr? _algorithm;
   SecretKey? _secretKey;
 
-  factory SecureLiteStorage({String container = 'SecureLiteStorage', String? password, String? path, Map<String, dynamic>? initialData}) {
+  factory SecureLiteStorage({
+    String container = 'SecureLiteStorage',
+    String? password,
+    String? path,
+    Map<String, dynamic>? initialData,
+  }) {
     if (_sync.containsKey(container)) {
       return _sync[container]!;
     } else {
@@ -41,7 +40,7 @@ class SecureLiteStorage {
   }
 
   SecureLiteStorage._internal(String key, [String? path, Map<String, dynamic>? initialData, String? password]) {
-    _storage = kIsWeb ? _HTMLStorage(key) : _IOStorage(key);
+    _storage = Storage(key);
     _initialData = initialData;
 
     _initStorage = Future<SecureLiteStorage>(() async {
@@ -124,7 +123,10 @@ class SecureLiteStorage {
     if (_algorithm != null) {
       final jsonPayload = json.decode(value);
 
-      if (jsonPayload == null || !jsonPayload.containsKey(_kCipherText) || !jsonPayload.containsKey(_kMac) || !jsonPayload.containsKey(_kNonce)) {
+      if (jsonPayload == null ||
+          !jsonPayload.containsKey(_kCipherText) ||
+          !jsonPayload.containsKey(_kMac) ||
+          !jsonPayload.containsKey(_kNonce)) {
         return value;
       }
 

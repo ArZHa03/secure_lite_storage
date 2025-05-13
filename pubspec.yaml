@@ -1,6 +1,6 @@
 name: secure_lite_storage
 description: "A simple, secure, fast, light and synchronous key-value storage written."
-version: 1.0.0
+version: 1.0.1
 homepage: ''
 
 environment:
